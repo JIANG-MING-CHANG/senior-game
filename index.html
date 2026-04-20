@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>樂齡智活闖關遊戲</title>
+    <!-- 引入 Tailwind CSS 進行美化 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 與 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 進行即時編譯 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* 避免長輩在手機上誤觸選取文字或放大畫面 */
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-y;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-yellow-100 via-green-100 to-blue-100 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // ==========================================
+        // 1. 遊戲資料與營養學文獻設定 (準確無誤)
+        // ==========================================
+        const GAME1_LEVELS = [
+          { level: 1, speed: 3, spawnRate: 1500, time: 30, items: [
+            { name: '蘋果', emoji: '🍎', type: 'healthy', msg: '富含維生素C與纖維' },
+            { name: '青花菜', emoji: '🥦', type: 'healthy', msg: '十字花科防癌好幫手' },
+            { name: '糖果', emoji: '🍬', type: 'unhealthy', msg: '空熱量易導致肥胖' }
+          ]},
+          { level: 2, speed: 4, spawnRate: 1200, time: 30, items: [
+            { name: '香蕉', emoji: '🍌', type: 'healthy', msg: '富含鉀離子穩定血壓' },
+            { name: '胡蘿蔔', emoji: '🥕', type: 'healthy', msg: '維生素A保護視力' },
+            { name: '洋芋片', emoji: '🥔', type: 'unhealthy', msg: '高鈉高油脂' },
+            { name: '汽水', emoji: '🥤', type: 'unhealthy', msg: '含糖量過高' }
+          ]},
+          { level: 3, speed: 5, spawnRate: 1000, time: 30, items: [
+            { name: '鮭魚', emoji: '🐟', type: 'healthy', msg: 'Omega-3保護心血管' },
+            { name: '菠菜', emoji: '🥬', type: 'healthy', msg: '鐵質與葉酸預防貧血' },
+            { name: '漢堡', emoji: '🍔', type: 'unhealthy', msg: '高飽和脂肪' },
+            { name: '薯條', emoji: '🍟', type: 'unhealthy', msg: '高溫油炸易發炎' }
+          ]},
+          { level: 4, speed: 6, spawnRate: 800, time: 30, items: [
+            { name: '雞蛋', emoji: '🥚', type: 'healthy', msg: '優質蛋白質維持肌肉' },
+            { name: '番茄', emoji: '🍅', type: 'healthy', msg: '茄紅素保護攝護腺' },
+            { name: '甜甜圈', emoji: '🍩', type: 'unhealthy', msg: '反式脂肪傷血管' },
+            { name: '冰淇淋', emoji: '🍨', type: 'unhealthy', msg: '高糖高脂負擔大' }
+          ]},
+          { level: 5, speed: 7, spawnRate: 600, time: 30, items: [
+            { name: '酪梨', emoji: '🥑', type: 'healthy', msg: '好油脂降膽固醇' },
+            { name: '藍莓', emoji: '🫐', type: 'healthy', msg: '花青素活化大腦防失智' },
+            { name: '熱狗', emoji: '🌭', type: 'unhealthy', msg: '加工肉品含亞硝酸鹽' },
+            { name: '披薩', emoji: '🍕', type: 'unhealthy', msg: '高熱量易囤積脂肪' }
+          ]},
+          { level: 6, speed: 8, spawnRate: 500, time: 30, items: [
+            { name: '芭樂', emoji: '🍐', type: 'healthy', msg: '維生素C抗氧化' },
+            { name: '奇異果', emoji: '🥝', type: 'healthy', msg: '幫助腸道消化' },
+            { name: '炸雞', emoji: '🍗', type: 'unhealthy', msg: '高溫油炸易發炎' },
+            { name: '泡麵', emoji: '🍜', type: 'unhealthy', msg: '高鈉防腐劑多' }
+          ]},
+          { level: 7, speed: 9, spawnRate: 450, time: 30, items: [
+            { name: '燕麥', emoji: '🥣', type: 'healthy', msg: '水溶性纖維降血糖' },
+            { name: '黑芝麻', emoji: '⚫', type: 'healthy', msg: '高鈣防骨鬆' },
+            { name: '珍珠奶茶', emoji: '🧋', type: 'unhealthy', msg: '精緻糖負擔大' },
+            { name: '蛋糕', emoji: '🍰', type: 'unhealthy', msg: '反式脂肪傷心血管' }
+          ]},
+          { level: 8, speed: 10, spawnRate: 400, time: 30, items: [
+            { name: '豆腐', emoji: '🧊', type: 'healthy', msg: '植物性優質蛋白' },
+            { name: '南瓜', emoji: '🎃', type: 'healthy', msg: 'β-胡蘿蔔素顧眼睛' },
+            { name: '香腸', emoji: '🌭', type: 'unhealthy', msg: '加工肉品亞硝酸鹽' },
+            { name: '培根', emoji: '🥓', type: 'unhealthy', msg: '飽和脂肪過高' }
+          ]},
+          { level: 9, speed: 11, spawnRate: 350, time: 30, items: [
+            { name: '核桃', emoji: '🌰', type: 'healthy', msg: '好油脂補腦' },
+            { name: '木瓜', emoji: '🥭', type: 'healthy', msg: '木瓜酵素助消化' },
+            { name: '蛋塔', emoji: '🥧', type: 'unhealthy', msg: '高糖高油' },
+            { name: '餅乾', emoji: '🍪', type: 'unhealthy', msg: '空熱量點心' }
+          ]},
+          { level: 10, speed: 12, spawnRate: 300, time: 30, items: [
+            { name: '奇亞籽', emoji: '🌱', type: 'healthy', msg: '豐富Omega-3' },
+            { name: '鯖魚', emoji: '🐟', type: 'healthy', msg: 'DHA保護大腦' },
+            { name: '炸豬排', emoji: '🥩', type: 'unhealthy', msg: '過多油脂' },
+            { name: '烤肉串', emoji: '🍢', type: 'unhealthy', msg: '燒烤易生致癌物' }
+          ]}
+        ];
+
+        const GAME2_LEVELS = [
+          { level: 1, time: 60, pairs: [
+            { food: '牛奶 🥛', nutrient: '鈣質 (強健骨骼)' },
+            { food: '橘子 🍊', nutrient: '維生素C (提升免疫)' },
+            { food: '胡蘿蔔 🥕', nutrient: '維生素A (保護眼睛)' }
+          ]},
+          { level: 2, time: 50, pairs: [
+            { food: '鮭魚 🐟', nutrient: 'Omega-3 (保護心臟)' },
+            { food: '菠菜 🥬', nutrient: '鐵質 (預防貧血)' },
+            { food: '香蕉 🍌', nutrient: '鉀離子 (穩定血壓)' }
+          ]},
+          { level: 3, time: 40, pairs: [
+            { food: '雞蛋 🥚', nutrient: '優質蛋白質 (長肌肉)' },
+            { food: '地瓜 🍠', nutrient: '膳食纖維 (幫助排便)' },
+            { food: '杏仁 🥜', nutrient: '維生素E (抗氧化防老)' }
+          ]},
+          { level: 4, time: 30, pairs: [
+            { food: '番茄 🍅', nutrient: '茄紅素 (保護攝護腺)' },
+            { food: '香菇 🍄', nutrient: '維生素D (幫助鈣吸收)' },
+            { food: '大蒜 🧄', nutrient: '大蒜素 (抗菌消炎)' }
+          ]},
+          { level: 5, time: 25, pairs: [
+            { food: '酪梨 🥑', nutrient: '單元不飽和脂肪 (清血管)' },
+            { food: '藍莓 🫐', nutrient: '花青素 (防大腦退化)' },
+            { food: '無糖優格 🥣', nutrient: '益生菌 (維持腸道健康)' }
+          ]},
+          { level: 6, time: 25, pairs: [
+            { food: '豆腐 🧊', nutrient: '植物性蛋白 (修復組織)' },
+            { food: '奇異果 🥝', nutrient: '維生素C (促進膠原蛋白)' },
+            { food: '黑芝麻 ⚫', nutrient: '高鈣 (預防骨鬆)' }
+          ]},
+          { level: 7, time: 25, pairs: [
+            { food: '燕麥 🥣', nutrient: '水溶性纖維 (降膽固醇)' },
+            { food: '南瓜 🎃', nutrient: 'β-胡蘿蔔素 (黏膜健康)' },
+            { food: '芭樂 🍐', nutrient: '維生素C (抗氧化)' }
+          ]},
+          { level: 8, time: 20, pairs: [
+            { food: '苦瓜 🥒', nutrient: '維生素C (降火氣)' },
+            { food: '黑豆 🫘', nutrient: '花青素 (保護心血管)' },
+            { food: '豬肝 🥩', nutrient: '鐵質 (紅血球製造)' }
+          ]},
+          { level: 9, time: 20, pairs: [
+            { food: '綠茶 🍵', nutrient: '兒茶素 (抗老防癌)' },
+            { food: '奇亞籽 🌱', nutrient: 'Omega-3 (抗發炎)' },
+            { food: '木瓜 🥭', nutrient: '木瓜酵素 (幫助消化)' }
+          ]},
+          { level: 10, time: 20, pairs: [
+            { food: '牡蠣 🦪', nutrient: '鋅 (維持免疫與味覺)' },
+            { food: '鯖魚 🐟', nutrient: 'DHA (活化大腦)' },
+            { food: '堅果 🌰', nutrient: '鎂 (幫助放鬆睡眠)' }
+          ]}
+        ];
+
+        // ==========================================
+        // 2. 音效生成器 (Web Audio API) & 語音
+        // ==========================================
+        let audioCtx = null;
+        const initAudio = () => {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+        };
+
+        const playSound = (type) => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          const now = audioCtx.currentTime;
+          if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+          } else if (type === 'fail') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+          } else if (type === 'win') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.setValueAtTime(500, now + 0.1);
+            osc.frequency.setValueAtTime(600, now + 0.2);
+            osc.frequency.setValueAtTime(800, now + 0.3);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+          }
+        };
+
+        const speak = (text) => {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-TW';
+            utterance.rate = 1.0; 
+            window.speechSynthesis.speak(utterance);
+          }
+        };
+
+        // ==========================================
+        // 3. 子遊戲組件
+        // ==========================================
+        function Game1Basket({ level, setLevel, score, updateScore, showFeedback, onGameOver, playerName }) {
+          const currentLevelData = GAME1_LEVELS[level - 1];
+          const containerRef = useRef(null);
+          const [basketX, setBasketX] = useState(50);
+          const basketXRef = useRef(50);
+          const [items, setItems] = useState([]);
+          const [timeLeft, setTimeLeft] = useState(currentLevelData.time);
+          const [isPlaying, setIsPlaying] = useState(true);
+
+          const handleMove = useCallback((e) => {
+            if (!containerRef.current || !isPlaying) return;
+            const rect = containerRef.current.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) {
+              clientX = e.touches[0].clientX;
+            }
+            let x = ((clientX - rect.left) / rect.width) * 100;
+            x = Math.max(5, Math.min(95, x)); 
+            setBasketX(x);
+            basketXRef.current = x;
+          }, [isPlaying]);
+
+          useEffect(() => {
+            if (!isPlaying) return;
+            const spawnInterval = setInterval(() => {
+              const randomItem = currentLevelData.items[Math.floor(Math.random() * currentLevelData.items.length)];
+              setItems(prev => [...prev, {
+                id: Date.now() + Math.random(),
+                x: Math.random() * 80 + 10,
+                y: -10,
+                ...randomItem
+              }]);
+            }, currentLevelData.spawnRate);
+            return () => clearInterval(spawnInterval);
+          }, [level, isPlaying, currentLevelData]);
+
+          useEffect(() => {
+            if (!isPlaying) return;
+            const moveInterval = setInterval(() => {
+              setItems(prev => {
+                let newItems = [];
+                prev.forEach(item => {
+                  const newY = item.y + currentLevelData.speed;
+                  if (newY >= 85 && newY <= 95 && Math.abs(item.x - basketXRef.current) < 15) {
+                    if (item.type === 'healthy') {
+                      updateScore(10 * level);
+                      showFeedback(`⭕ 答對了！+${10 * level}分 (${item.name})`, 'success', '接得好');
+                    } else {
+                      updateScore(-10);
+                      showFeedback(`❌ 接錯了！扣10分 (${item.name})`, 'fail', '小心喔，這個不健康');
+                    }
+                  } else if (newY < 110) {
+                    newItems.push({ ...item, y: newY });
+                  } else {
+                    if (item.type === 'healthy') {
+                      updateScore(-5);
+                      showFeedback(`⚠️ 漏接健康食物！扣5分`, 'fail', '哎呀，漏接了');
+                    }
+                  }
+                });
+                return newItems;
+              });
+            }, 50);
+            return () => clearInterval(moveInterval);
+          }, [level, isPlaying, currentLevelData.speed, updateScore, showFeedback]);
+
+          useEffect(() => {
+            if (!isPlaying) return;
+            if (timeLeft <= 0) {
+              setIsPlaying(false);
+              playSound('win');
+              if (level < GAME1_LEVELS.length) {
+                showFeedback('🎉 恭喜過關！難度增加囉！', 'win', '恭喜過關，繼續挑戰下一關！');
+                setTimeout(() => {
+                  setLevel(level + 1);
+                  setTimeLeft(GAME1_LEVELS[level].time);
+                  setItems([]);
+                  setIsPlaying(true);
+                }, 3000);
+              } else {
+                showFeedback('🏆 恭喜全破關！', 'win', '太棒了，全部挑戰成功！');
+                setTimeout(onGameOver, 3000);
+              }
+              return;
+            }
+            const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+            return () => clearInterval(timer);
+          }, [timeLeft, isPlaying, level, setLevel, onGameOver, showFeedback]);
+
+          return (
+            <div className="w-full max-w-4xl h-[80vh] bg-white rounded-3xl shadow-2xl relative overflow-hidden border-8 border-orange-300 flex flex-col">
+              <div className="bg-orange-100 p-4 flex justify-between items-center border-b-4 border-orange-200 z-10">
+                <div className="text-xl md:text-3xl font-bold text-orange-700">第 {level} 關</div>
+                <div className="text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
+                <div className="text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
+              </div>
+              <div 
+                ref={containerRef}
+                className="flex-1 relative cursor-pointer bg-gradient-to-b from-blue-50 to-green-50 touch-none"
+                onMouseMove={handleMove}
+                onTouchMove={handleMove}
+              >
+                <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                  <span className="text-9xl">🛒</span>
+                </div>
+                {items.map(item => (
+                  <div 
+                    key={item.id} 
+                    className="absolute text-5xl md:text-6xl drop-shadow-md transition-transform"
+                    style={{ left: `${item.x}%`, top: `${item.y}%`, transform: 'translate(-50%, -50%)' }}
+                  >
+                    {item.emoji}
+                  </div>
+                ))}
+                <div 
+                  className="absolute bottom-5 text-6xl md:text-7xl drop-shadow-2xl transition-all duration-75 ease-out pointer-events-none"
+                  style={{ left: `${basketX}%`, transform: 'translateX(-50%)' }}
+                >
+                  🧺
+                </div>
+              </div>
+              {!isPlaying && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-4">
+                    {level === GAME1_LEVELS.length && timeLeft <= 0 ? '遊戲完成！結算中...' : '🎉 準備進入下一關...'}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        function Game2Match({ level, setLevel, score, updateScore, showFeedback, onGameOver }) {
+          const currentLevelData = GAME2_LEVELS[level - 1];
+          const [timeLeft, setTimeLeft] = useState(currentLevelData.time);
+          const [isPlaying, setIsPlaying] = useState(true);
+          const [chances, setChances] = useState(3); 
+          
+          const shuffleArray = (array) => [...array].sort(() => Math.random() - 0.5);
+
+          const [leftItems, setLeftItems] = useState([]);
+          const [rightItems, setRightItems] = useState([]);
+          
+          const [selectedLeft, setSelectedLeft] = useState(null);
+          const [selectedRight, setSelectedRight] = useState(null);
+          const [matchedPairs, setMatchedPairs] = useState([]);
+
+          useEffect(() => {
+            const pairs = currentLevelData.pairs;
+            setLeftItems(shuffleArray(pairs.map(p => p.food)));
+            setRightItems(shuffleArray(pairs.map(p => p.nutrient)));
+            setMatchedPairs([]);
+            setSelectedLeft(null);
+            setSelectedRight(null);
+            setTimeLeft(currentLevelData.time);
+            setChances(3);
+            setIsPlaying(true);
+          }, [level, currentLevelData]);
+
+          useEffect(() => {
+            if (selectedLeft && selectedRight) {
+              const isCorrect = currentLevelData.pairs.some(
+                p => p.food === selectedLeft && p.nutrient === selectedRight
+              );
+
+              if (isCorrect) {
+                setMatchedPairs(prev => [...prev, selectedLeft, selectedRight]);
+                updateScore(100);
+                showFeedback(`⭕ 答對了！+100分`, 'success', '答對了，太棒了');
+              } else {
+                setChances(prev => prev - 1);
+                updateScore(-50);
+                showFeedback('❌ 連錯了！扣50分', 'fail', '哎呀，連錯了，再試一次');
+              }
+              setTimeout(() => {
+                setSelectedLeft(null);
+                setSelectedRight(null);
+              }, 500);
+            }
+          }, [selectedLeft, selectedRight, currentLevelData, updateScore, showFeedback]);
+
+          useEffect(() => {
+            if (!isPlaying) return;
+            if (matchedPairs.length === currentLevelData.pairs.length * 2) {
+              setIsPlaying(false);
+              playSound('win');
+              if (level < GAME2_LEVELS.length) {
+                showFeedback('🎉 恭喜過關！難度增加囉！', 'win', '順利過關，繼續挑戰');
+                setTimeout(() => { setLevel(level + 1); }, 3000);
+              } else {
+                showFeedback('🏆 恭喜全破關！', 'win', '太厲害了，全部破關');
+                setTimeout(onGameOver, 3000);
+              }
+            } else if (chances <= 0) {
+              setIsPlaying(false);
+              showFeedback('⏱️ 三次機會用完！跳下一關', 'fail', '機會用完了，我們換下一關');
+              setTimeout(() => {
+                if (level < GAME2_LEVELS.length) {
+                  setLevel(level + 1);
+                } else {
+                  onGameOver();
+                }
+              }, 3000);
+            }
+          }, [matchedPairs, chances, isPlaying, level, setLevel, onGameOver, currentLevelData.pairs.length, showFeedback]);
+
+          useEffect(() => {
+            if (!isPlaying) return;
+            if (timeLeft <= 0) {
+              setIsPlaying(false);
+              showFeedback('⏰ 時間到！跳下一關！', 'fail', '時間到了，換下一關');
+              setTimeout(() => {
+                if (level < GAME2_LEVELS.length) {
+                  setLevel(level + 1);
+                } else {
+                  onGameOver();
+                }
+              }, 3000);
+              return;
+            }
+            const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
+            return () => clearInterval(timer);
+          }, [timeLeft, isPlaying, level, setLevel, onGameOver, showFeedback]);
+
+          return (
+            <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden border-8 border-teal-300 flex flex-col">
+              <div className="bg-teal-100 p-4 flex flex-wrap justify-between items-center border-b-4 border-teal-200 gap-2">
+                <div className="text-xl md:text-3xl font-bold text-teal-800">第 {level} 關</div>
+                <div className="text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
+                <div className="text-xl md:text-3xl font-bold text-rose-600">❤️ 機會：{chances}/3</div>
+                <div className="text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
+              </div>
+
+              <div className="p-4 md:p-8 flex justify-between relative bg-gradient-to-b from-gray-50 to-gray-100 min-h-[500px]">
+                <div className="w-[45%] flex flex-col gap-4 md:gap-6 z-10">
+                  <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-700 mb-2 bg-white rounded-xl py-2 shadow-sm">🍽️ 食物</h3>
+                  {leftItems.map((item, idx) => {
+                    const isSelected = selectedLeft === item;
+                    const isMatched = matchedPairs.includes(item);
+                    return (
+                      <button
+                        key={`left-${idx}`}
+                        disabled={isMatched || (!isPlaying)}
+                        onClick={() => setSelectedLeft(item)}
+                        className={`p-3 md:p-6 rounded-2xl text-xl md:text-3xl font-bold shadow-md transition-all transform break-words
+                          ${isMatched ? 'bg-gray-300 text-gray-500 scale-95 opacity-50 cursor-not-allowed' : 
+                            isSelected ? 'bg-yellow-400 text-white scale-105 shadow-xl ring-4 ring-yellow-200' : 
+                            'bg-white text-teal-800 hover:bg-teal-50 hover:scale-105 border-2 border-teal-100'}`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                  <span className="text-9xl">🔗</span>
+                </div>
+
+                <div className="w-[45%] flex flex-col gap-4 md:gap-6 z-10">
+                  <h3 className="text-2xl md:text-3xl font-bold text-center text-gray-700 mb-2 bg-white rounded-xl py-2 shadow-sm">💊 營養素</h3>
+                  {rightItems.map((item, idx) => {
+                    const isSelected = selectedRight === item;
+                    const isMatched = matchedPairs.includes(item);
+                    return (
+                      <button
+                        key={`right-${idx}`}
+                        disabled={isMatched || (!isPlaying)}
+                        onClick={() => setSelectedRight(item)}
+                        className={`p-3 md:p-6 rounded-2xl text-lg md:text-2xl font-bold shadow-md transition-all transform text-center break-words
+                          ${isMatched ? 'bg-gray-300 text-gray-500 scale-95 opacity-50 cursor-not-allowed' : 
+                            isSelected ? 'bg-yellow-400 text-white scale-105 shadow-xl ring-4 ring-yellow-200' : 
+                            'bg-white text-purple-800 hover:bg-purple-50 hover:scale-105 border-2 border-purple-100'}`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {!isPlaying && matchedPairs.length === currentLevelData.pairs.length * 2 && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 rounded-3xl">
+                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">🎉 準備進入下一關...</div>
+                </div>
+              )}
+              {!isPlaying && chances <= 0 && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 rounded-3xl">
+                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">⏱️ 機會用盡，換下一關...</div>
+                </div>
+              )}
+              {!isPlaying && timeLeft <= 0 && chances > 0 && matchedPairs.length !== currentLevelData.pairs.length * 2 && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 rounded-3xl">
+                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">⏰ 時間到，換下一關...</div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // ==========================================
+        // 4. 主應用程式
+        // ==========================================
+        function App() {
+          const [screen, setScreen] = useState('login'); 
+          const [playerName, setPlayerName] = useState('');
+          const [score, setScore] = useState(0);
+          const [level, setLevel] = useState(1);
+          const [gameMessage, setGameMessage] = useState('');
+          const messageTimeoutRef = useRef(null);
+          
+          const updateScore = useCallback((points) => {
+            setScore(prev => {
+              if (points < 0 && prev < 100) return prev;
+              let newScore = prev + points;
+              return newScore < 0 ? 0 : newScore; 
+            });
+          }, []);
+
+          const showFeedback = useCallback((msg, type, speechText = '') => {
+            playSound(type);
+            if (speechText) speak(speechText);
+            setGameMessage(msg);
+            if (messageTimeoutRef.current) clearTimeout(messageTimeoutRef.current);
+            messageTimeoutRef.current = setTimeout(() => setGameMessage(''), 1500);
+          }, []);
+
+          const startGame = (type) => {
+            initAudio();
+            setLevel(1);
+            setScore(0);
+            setScreen(type);
+          };
+
+          return (
+            <div className="w-full flex flex-col items-center justify-center p-2 md:p-4 mt-[5vh]">
+              
+              {gameMessage && (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white bg-opacity-95 px-6 py-4 md:px-8 md:py-4 rounded-3xl shadow-2xl border-4 border-yellow-400 animate-bounce transition-all w-[90%] md:w-auto">
+                  <h2 className="text-2xl md:text-4xl font-bold text-center text-rose-600">{gameMessage}</h2>
+                </div>
+              )}
+
+              {screen === 'login' && (
+                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl text-center border-8 border-green-300">
+                  <h1 className="text-4xl md:text-5xl font-extrabold text-green-600 mb-8 drop-shadow-md">🌿 樂齡智活闖關</h1>
+                  <p className="text-xl md:text-2xl mb-6 text-gray-600 font-bold">阿公阿嬤您好！<br/>請輸入您的尊姓大名：</p>
+                  <input 
+                    type="text" 
+                    className="w-full text-3xl md:text-4xl p-4 border-4 border-blue-300 rounded-2xl mb-8 text-center focus:outline-none focus:border-green-500"
+                    placeholder="例如：王大明"
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                  />
+                  <button 
+                    onClick={() => {
+                      if(playerName.trim() === '') { alert('請輸入姓名喔！'); return; }
+                      initAudio();
+                      setScreen('menu');
+                    }}
+                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 text-white text-3xl md:text-4xl font-bold py-5 rounded-2xl shadow-lg transform transition active:scale-95"
+                  >
+                    🌟 開始進入遊戲 🌟
+                  </button>
+                </div>
+              )}
+
+              {screen === 'menu' && (
+                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-2xl text-center border-8 border-blue-300">
+                  <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-6">歡迎，{playerName}！</h1>
+                  <p className="text-xl md:text-3xl mb-10 text-gray-700 font-semibold">今天想玩哪個遊戲來活動大腦呢？</p>
+                  <div className="flex flex-col gap-6">
+                    <button 
+                      onClick={() => startGame('game1')}
+                      className="w-full bg-gradient-to-r from-orange-400 to-red-400 text-white text-2xl md:text-4xl font-bold py-6 md:py-8 rounded-3xl shadow-xl transform transition active:scale-95"
+                    >
+                      🛒 樂齡健康菜籃族
+                      <p className="text-lg md:text-xl mt-2 font-normal">接住健康食物，閃避不健康食物</p>
+                    </button>
+                    <button 
+                      onClick={() => startGame('game2')}
+                      className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white text-2xl md:text-4xl font-bold py-6 md:py-8 rounded-3xl shadow-xl transform transition active:scale-95"
+                    >
+                      🔗 食品營養連連看
+                      <p className="text-lg md:text-xl mt-2 font-normal">將食物與對應的營養素連起來</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {screen === 'game1' && (
+                <Game1Basket level={level} setLevel={setLevel} score={score} updateScore={updateScore} showFeedback={showFeedback} onGameOver={() => setScreen('result')} playerName={playerName} />
+              )}
+
+              {screen === 'game2' && (
+                <Game2Match level={level} setLevel={setLevel} score={score} updateScore={updateScore} showFeedback={showFeedback} onGameOver={() => setScreen('result')} />
+              )}
+
+              {screen === 'result' && (
+                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl text-center border-8 border-yellow-400">
+                  <h1 className="text-6xl mb-6">🎉</h1>
+                  <h2 className="text-4xl md:text-5xl font-extrabold text-rose-600 mb-6">遊戲結束！</h2>
+                  <p className="text-2xl md:text-4xl text-blue-700 font-bold mb-4">{playerName} 您的總分是</p>
+                  <p className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">{score} 分</p>
+                  <div className="bg-yellow-100 p-6 rounded-2xl mb-8">
+                    <p className="text-2xl md:text-3xl font-bold text-gray-800">
+                      {score >= 800 ? '太厲害了！知識與反應滿分！🥇' : 
+                       score >= 300 ? '表現很棒喔！多多練習會更厲害！🌟' : 
+                       '不要氣餒，再接再厲！活動大腦就是最棒的運動！💪'}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setScreen('menu')}
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-3xl md:text-4xl font-bold py-5 rounded-2xl shadow-lg transform transition active:scale-95"
+                  >
+                    🏠 回到主選單
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // 渲染到根節點
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
