@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>樂齡智活闖關遊戲</title>
     <!-- 引入 Tailwind CSS 進行美化 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,16 +12,26 @@
     <!-- 引入 Babel 進行即時編譯 -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        /* 避免長輩在手機上誤觸選取文字或放大畫面 */
-        body {
+        /* 鎖定螢幕，防止長輩在手機上誤觸選取、放大畫面或下拉重整 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100dvh; /* 動態視窗高度，完美避開手機瀏覽器網址列 */
+            overflow: hidden; /* 隱藏全部捲軸 */
+            overscroll-behavior: none; /* 防止 iOS 滑動回彈效應 */
             user-select: none;
             -webkit-user-select: none;
-            touch-action: pan-y;
-            overflow: hidden;
+            touch-action: none; /* 鎖定預設觸控行為 (如雙擊放大、平移) */
+            background-color: #FFFBF5;
+        }
+        #root {
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-yellow-100 via-green-100 to-blue-100 min-h-screen">
+<body class="bg-gradient-to-br from-yellow-100 via-green-100 to-blue-100">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -294,47 +304,46 @@
           }, [timeLeft, isPlaying, level, setLevel, onGameOver, showFeedback]);
 
           return (
-            // 更新：在此處套用 image1.jpg 作為背景
             <div 
-              className="w-full max-w-4xl h-[80vh] rounded-3xl shadow-2xl relative overflow-hidden border-8 border-orange-400 flex flex-col bg-orange-50"
+              className="w-full h-full max-h-[900px] max-w-4xl rounded-2xl md:rounded-3xl shadow-2xl relative overflow-hidden border-4 md:border-8 border-orange-400 flex flex-col bg-orange-50"
               style={{
                 backgroundImage: "url('image1.jpg')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               }}
             >
-              {/* 半透明遮罩層：確保遊戲過程中的視覺不會過度受背景干擾 */}
+              {/* 半透明遮罩層 */}
               <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-0 pointer-events-none"></div>
 
-              {/* 頂部狀態列 */}
-              <div className="bg-orange-100/90 p-4 flex justify-between items-center border-b-4 border-orange-300 z-10 relative">
-                <div className="text-xl md:text-3xl font-bold text-orange-700">第 {level} 關</div>
-                <div className="text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
-                <div className="text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
+              {/* 頂部狀態列：使用 RWD 字體大小，確保小螢幕不破版 */}
+              <div className="bg-orange-100/90 p-2 md:p-4 flex justify-between items-center border-b-4 border-orange-300 z-10 relative flex-shrink-0">
+                <div className="text-base sm:text-xl md:text-3xl font-bold text-orange-700">第 {level} 關</div>
+                <div className="text-base sm:text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
+                <div className="text-base sm:text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
               </div>
               
               {/* 遊戲可互動區域 */}
               <div 
                 ref={containerRef}
-                className="flex-1 relative cursor-pointer touch-none z-10"
+                className="flex-1 relative cursor-pointer touch-none z-10 w-full min-h-0"
                 onMouseMove={handleMove}
                 onTouchMove={handleMove}
               >
                 <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                  <span className="text-9xl">🛒</span>
+                  <span className="text-8xl sm:text-9xl">🛒</span>
                 </div>
                 {items.map(item => (
                   <div 
                     key={item.id} 
-                    className="absolute text-5xl md:text-6xl drop-shadow-md transition-transform"
+                    className="absolute text-4xl sm:text-5xl md:text-6xl drop-shadow-md transition-transform"
                     style={{ left: `${item.x}%`, top: `${item.y}%`, transform: 'translate(-50%, -50%)' }}
                   >
                     {item.emoji}
                   </div>
                 ))}
                 <div 
-                  className="absolute bottom-5 text-6xl md:text-7xl drop-shadow-2xl transition-all duration-75 ease-out pointer-events-none"
-                  style={{ left: `${basketX}%`, transform: 'translateX(-50%)' }}
+                  className="absolute text-5xl sm:text-6xl md:text-7xl drop-shadow-2xl transition-all duration-75 ease-out pointer-events-none"
+                  style={{ left: `${basketX}%`, bottom: '5%', transform: 'translateX(-50%)' }}
                 >
                   🧺
                 </div>
@@ -342,7 +351,7 @@
               
               {!isPlaying && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
-                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-4">
+                  <div className="text-3xl sm:text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-4">
                     {level === GAME1_LEVELS.length && timeLeft <= 0 ? '遊戲完成！結算中...' : '🎉 準備進入下一關...'}
                   </div>
                 </div>
@@ -352,7 +361,7 @@
         }
 
         // ==========================================
-        // 遊戲二 營養連連看 (華麗卡片版)
+        // 遊戲二 營養連連看 (華麗卡片 RWD 版)
         // ==========================================
         function Game2Match({ level, setLevel, score, updateScore, showFeedback, onGameOver }) {
           const currentLevelData = GAME2_LEVELS[level - 1];
@@ -446,18 +455,15 @@
             return () => clearInterval(timer);
           }, [timeLeft, isPlaying, level, setLevel, onGameOver, showFeedback]);
 
-          // 解析左側食物資料格式 "食物名 圖像"
           const parseFood = (str) => {
             const parts = str.trim().split(' ');
             return { name: parts[0], emoji: parts.slice(1).join(' ') || '🍽️' };
           };
 
-          // 解析右側營養素資料格式 "營養素 (健康好處)"
           const parseNutrient = (str) => {
             const parts = str.split(' (');
             const title = parts[0];
             const desc = parts.length > 1 ? parts[1].replace(')', '') : '';
-            // 根據關鍵字分配小圖示
             let icon = '✨';
             if (str.includes('骨')) icon = '🦴';
             else if (str.includes('肉') || str.includes('蛋白')) icon = '💪';
@@ -470,43 +476,41 @@
           };
 
           return (
-            // 外層自然風背景：採用米黃色底色與隱約的角落葉片點綴
-            <div className="w-full max-w-5xl bg-[#FFFBF5] rounded-3xl shadow-2xl overflow-hidden border-8 border-orange-200 flex flex-col relative">
+            // 外層 RWD 設計：使用 flex-1, w-full, h-full 確保自動充滿畫面並處理縮放
+            <div className="w-full h-full max-h-[900px] max-w-5xl bg-[#FFFBF5] rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden border-4 md:border-8 border-orange-200 flex flex-col relative">
               
-              {/* 四周的裝飾葉片與元素 (純CSS與文字，不影響效能) */}
-              <div className="absolute top-0 left-0 text-6xl opacity-20 pointer-events-none transform -translate-x-2 -translate-y-2">🌿</div>
-              <div className="absolute top-0 right-0 text-6xl opacity-20 pointer-events-none transform translate-x-2 -translate-y-2">🍃</div>
-              <div className="absolute bottom-0 left-0 text-6xl opacity-20 pointer-events-none transform -translate-x-2 translate-y-2">🌱</div>
-              <div className="absolute bottom-0 right-0 text-6xl opacity-20 pointer-events-none transform translate-x-2 translate-y-2">☘️</div>
-              <div className="absolute top-1/4 left-8 text-3xl opacity-30 pointer-events-none">✨</div>
-              <div className="absolute bottom-1/4 right-8 text-3xl opacity-30 pointer-events-none">✨</div>
+              {/* 四周的裝飾葉片與元素 */}
+              <div className="absolute top-0 left-0 text-4xl sm:text-6xl opacity-20 pointer-events-none transform -translate-x-2 -translate-y-2">🌿</div>
+              <div className="absolute top-0 right-0 text-4xl sm:text-6xl opacity-20 pointer-events-none transform translate-x-2 -translate-y-2">🍃</div>
+              <div className="absolute bottom-0 left-0 text-4xl sm:text-6xl opacity-20 pointer-events-none transform -translate-x-2 translate-y-2">🌱</div>
+              <div className="absolute bottom-0 right-0 text-4xl sm:text-6xl opacity-20 pointer-events-none transform translate-x-2 translate-y-2">☘️</div>
 
               {/* 頂部狀態列 */}
-              <div className="bg-orange-100 p-4 flex flex-wrap justify-between items-center border-b-4 border-orange-200 gap-2 relative z-10">
-                <div className="text-xl md:text-3xl font-bold text-orange-800">第 {level} 關</div>
-                <div className="text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
-                <div className="text-xl md:text-3xl font-bold text-rose-600">❤️ 機會：{chances}/3</div>
-                <div className="text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
+              <div className="bg-orange-100 p-2 md:p-4 flex flex-wrap justify-between items-center border-b-4 border-orange-200 gap-1 md:gap-2 relative z-10 flex-shrink-0">
+                <div className="text-sm sm:text-xl md:text-3xl font-bold text-orange-800">第 {level} 關</div>
+                <div className="text-sm sm:text-xl md:text-3xl font-bold text-red-600">總分：{score}</div>
+                <div className="text-sm sm:text-xl md:text-3xl font-bold text-rose-600">❤️ 機會：{chances}/3</div>
+                <div className="text-sm sm:text-xl md:text-3xl font-bold text-blue-600">⏳ {timeLeft} 秒</div>
               </div>
 
-              {/* 遊戲標題區 (仿造圖一設計) */}
-              <div className="flex flex-col items-center justify-center pt-8 pb-4 relative z-10">
-                <div className="bg-orange-500 text-white px-5 py-1 rounded-full text-lg md:text-xl font-bold mb-3 shadow-md">
+              {/* 遊戲標題區：壓縮間距以適應小螢幕 */}
+              <div className="flex flex-col items-center justify-center pt-2 sm:pt-4 md:pt-6 pb-1 sm:pb-3 relative z-10 flex-shrink-0">
+                <div className="bg-orange-500 text-white px-3 sm:px-5 py-0.5 sm:py-1 rounded-full text-xs sm:text-lg md:text-xl font-bold mb-1 sm:mb-2 shadow-md">
                   食尚樂齡大挑戰
                 </div>
-                <h2 className="text-4xl md:text-5xl font-black text-rose-600 mb-5 tracking-wide drop-shadow-sm">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-rose-600 mb-2 sm:mb-4 tracking-wide drop-shadow-sm">
                   營養連連看
                 </h2>
-                <div className="bg-yellow-100 px-6 py-2 rounded-full border-2 border-yellow-300 shadow-inner">
-                  <p className="text-lg md:text-xl font-bold text-teal-800">點擊左邊「美味食物」配對右邊「健康好處」！</p>
+                <div className="bg-yellow-100 px-3 sm:px-6 py-1 sm:py-2 rounded-full border border-yellow-300 shadow-inner">
+                  <p className="text-xs sm:text-lg md:text-xl font-bold text-teal-800 leading-none">點擊左邊「食物」配對右邊「好處」！</p>
                 </div>
               </div>
 
-              {/* 連連看主畫面區 */}
-              <div className="p-4 md:p-8 flex justify-between items-center relative min-h-[400px] z-10">
+              {/* 連連看主畫面區：使用 flex-1 動態適應剩餘高度，且內容垂直均勻分佈 */}
+              <div className="p-2 sm:p-4 md:p-8 flex-1 flex justify-between items-center relative min-h-0 z-10 w-full">
                 
                 {/* 左側：美味食物 */}
-                <div className="w-[42%] flex flex-col gap-4 md:gap-5">
+                <div className="w-[45%] flex flex-col justify-evenly h-full gap-2 sm:gap-4">
                   {leftItems.map((item, idx) => {
                     const isSelected = selectedLeft === item;
                     const isMatched = matchedPairs.includes(item);
@@ -517,17 +521,17 @@
                         key={`left-${idx}`}
                         disabled={isMatched || (!isPlaying)}
                         onClick={() => setSelectedLeft(item)}
-                        className={`flex items-center p-3 md:p-4 rounded-2xl transition-all transform w-full text-left
-                          ${isMatched ? 'opacity-40 grayscale border-gray-200 bg-gray-100 shadow-none cursor-not-allowed scale-95' : 
-                            isSelected ? 'bg-yellow-50 border-4 border-yellow-400 scale-105 shadow-xl ring-4 ring-yellow-200' : 
-                            'bg-orange-50 hover:bg-orange-100 hover:scale-105 border-2 border-orange-200 shadow-md'}`}
+                        className={`flex items-center p-1 sm:p-2 md:p-4 rounded-xl md:rounded-2xl transition-all transform w-full text-left
+                          ${isMatched ? 'opacity-40 grayscale border-gray-200 bg-gray-100 shadow-none cursor-not-allowed scale-[0.98]' : 
+                            isSelected ? 'bg-yellow-50 border-2 sm:border-4 border-yellow-400 scale-105 shadow-md md:shadow-xl' : 
+                            'bg-orange-50 hover:bg-orange-100 hover:scale-[1.02] border border-orange-200 shadow-sm md:shadow-md'}`}
                       >
-                        <div className="bg-white rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl mr-3 md:mr-4 shadow-sm flex-shrink-0 border border-orange-100">
+                        <div className="bg-white rounded-full w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center text-lg sm:text-3xl md:text-4xl mr-1 sm:mr-2 md:mr-4 shadow-sm flex-shrink-0 border border-orange-100">
                           {emoji}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-xl md:text-2xl font-bold text-gray-800">{name}</span>
-                          <span className="text-sm md:text-base font-semibold text-orange-600 mt-1">優質食材選擇</span>
+                        <div className="flex flex-col justify-center overflow-hidden">
+                          <span className="text-[11px] sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight break-words">{name}</span>
+                          <span className="text-[9px] sm:text-sm md:text-base font-semibold text-orange-600 mt-0.5 sm:mt-1 hidden sm:block truncate">優質食材選擇</span>
                         </div>
                       </button>
                     );
@@ -535,12 +539,12 @@
                 </div>
 
                 {/* 中間裝飾圖示 (交換箭頭) */}
-                <div className="w-[10%] flex items-center justify-center pointer-events-none">
-                  <span className="text-4xl md:text-6xl text-gray-300 font-black">⇆</span>
+                <div className="w-[8%] flex items-center justify-center pointer-events-none">
+                  <span className="text-2xl sm:text-4xl md:text-6xl text-gray-300 font-black">⇆</span>
                 </div>
 
                 {/* 右側：健康好處 */}
-                <div className="w-[42%] flex flex-col gap-4 md:gap-5">
+                <div className="w-[45%] flex flex-col justify-evenly h-full gap-2 sm:gap-4">
                   {rightItems.map((item, idx) => {
                     const isSelected = selectedRight === item;
                     const isMatched = matchedPairs.includes(item);
@@ -551,17 +555,17 @@
                         key={`right-${idx}`}
                         disabled={isMatched || (!isPlaying)}
                         onClick={() => setSelectedRight(item)}
-                        className={`flex items-center p-3 md:p-4 rounded-2xl transition-all transform w-full text-left
-                          ${isMatched ? 'opacity-40 grayscale border-gray-200 bg-gray-100 shadow-none cursor-not-allowed scale-95' : 
-                            isSelected ? 'bg-yellow-50 border-4 border-yellow-400 scale-105 shadow-xl ring-4 ring-yellow-200' : 
-                            'bg-teal-50 hover:bg-teal-100 hover:scale-105 border-2 border-teal-200 shadow-md'}`}
+                        className={`flex items-center p-1 sm:p-2 md:p-4 rounded-xl md:rounded-2xl transition-all transform w-full text-left
+                          ${isMatched ? 'opacity-40 grayscale border-gray-200 bg-gray-100 shadow-none cursor-not-allowed scale-[0.98]' : 
+                            isSelected ? 'bg-yellow-50 border-2 sm:border-4 border-yellow-400 scale-105 shadow-md md:shadow-xl' : 
+                            'bg-teal-50 hover:bg-teal-100 hover:scale-[1.02] border border-teal-200 shadow-sm md:shadow-md'}`}
                       >
-                        <div className="bg-white rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl mr-3 md:mr-4 shadow-sm flex-shrink-0 border border-teal-100">
+                        <div className="bg-white rounded-full w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 flex items-center justify-center text-lg sm:text-3xl md:text-4xl mr-1 sm:mr-2 md:mr-4 shadow-sm flex-shrink-0 border border-teal-100">
                           {icon}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-lg md:text-xl font-bold text-gray-800">{title}</span>
-                          <span className="text-sm md:text-base font-semibold text-teal-600 mt-1">{desc}</span>
+                        <div className="flex flex-col justify-center overflow-hidden">
+                          <span className="text-[11px] sm:text-lg md:text-xl font-bold text-gray-800 leading-tight break-words">{title}</span>
+                          <span className="text-[9px] sm:text-sm md:text-base font-semibold text-teal-600 mt-0.5 sm:mt-1 leading-tight break-words">{desc}</span>
                         </div>
                       </button>
                     );
@@ -570,26 +574,26 @@
               </div>
 
               {/* 底部進度文字 */}
-              <div className="text-center pb-6 z-10">
-                <span className="text-xl md:text-2xl font-bold text-gray-600 bg-white px-6 py-2 rounded-full shadow-sm border border-gray-100">
+              <div className="text-center pb-2 sm:pb-4 md:pb-6 z-10 flex-shrink-0">
+                <span className="text-xs sm:text-xl md:text-2xl font-bold text-gray-600 bg-white px-3 sm:px-6 py-1 sm:py-2 rounded-full shadow-sm border border-gray-100">
                   目前配對成功： {matchedPairs.length / 2} / {currentLevelData.pairs.length}
                 </span>
               </div>
 
               {/* 遮罩狀態 */}
               {!isPlaying && matchedPairs.length === currentLevelData.pairs.length * 2 && (
-                <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-20 rounded-3xl">
-                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">🎉 準備進入下一關...</div>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl md:rounded-3xl">
+                  <div className="text-3xl sm:text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-2">🎉 準備進入下一關...</div>
                 </div>
               )}
               {!isPlaying && chances <= 0 && (
-                <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-20 rounded-3xl">
-                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">⏱️ 機會用盡，換下一關...</div>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl md:rounded-3xl">
+                  <div className="text-3xl sm:text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-2">⏱️ 機會用盡，換下一關...</div>
                 </div>
               )}
               {!isPlaying && timeLeft <= 0 && chances > 0 && matchedPairs.length !== currentLevelData.pairs.length * 2 && (
-                <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-20 rounded-3xl">
-                  <div className="text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center">⏰ 時間到，換下一關...</div>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl md:rounded-3xl">
+                  <div className="text-3xl sm:text-4xl md:text-6xl font-black text-white drop-shadow-lg animate-pulse text-center px-2">⏰ 時間到，換下一關...</div>
                 </div>
               )}
             </div>
@@ -631,21 +635,23 @@
           };
 
           return (
-            <div className="w-full flex flex-col items-center justify-center p-2 md:p-4 mt-[5vh]">
+            // 讓整個 App 元件也是滿版，使用 h-full 確保沒有多餘捲軸
+            <div className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 max-w-6xl mx-auto">
               
+              {/* 浮動提示訊息調整為適應手機大小 */}
               {gameMessage && (
-                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white bg-opacity-95 px-6 py-4 md:px-8 md:py-4 rounded-3xl shadow-2xl border-4 border-yellow-400 animate-bounce transition-all w-[90%] md:w-auto">
-                  <h2 className="text-2xl md:text-4xl font-bold text-center text-rose-600">{gameMessage}</h2>
+                <div className="fixed top-10 sm:top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white/95 px-4 sm:px-6 py-2 sm:py-4 rounded-2xl sm:rounded-3xl shadow-2xl border-2 sm:border-4 border-yellow-400 animate-bounce transition-all w-[90%] md:w-auto">
+                  <h2 className="text-lg sm:text-2xl md:text-4xl font-bold text-center text-rose-600 leading-tight">{gameMessage}</h2>
                 </div>
               )}
 
               {screen === 'login' && (
-                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl text-center border-8 border-green-300">
-                  <h1 className="text-4xl md:text-5xl font-extrabold text-green-600 mb-8 drop-shadow-md">🌿 樂齡智活闖關</h1>
-                  <p className="text-xl md:text-2xl mb-6 text-gray-600 font-bold">阿公阿嬤您好！<br/>請輸入您的尊姓大名：</p>
+                <div className="bg-white p-6 sm:p-10 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-xl text-center border-4 sm:border-8 border-green-300 max-h-full overflow-y-auto">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-green-600 mb-4 sm:mb-8 drop-shadow-md">🌿 樂齡智活闖關</h1>
+                  <p className="text-lg sm:text-xl md:text-2xl mb-4 sm:mb-6 text-gray-600 font-bold">阿公阿嬤您好！<br/>請輸入您的尊姓大名：</p>
                   <input 
                     type="text" 
-                    className="w-full text-3xl md:text-4xl p-4 border-4 border-blue-300 rounded-2xl mb-8 text-center focus:outline-none focus:border-green-500"
+                    className="w-full text-2xl sm:text-3xl md:text-4xl p-3 sm:p-4 border-2 sm:border-4 border-blue-300 rounded-xl sm:rounded-2xl mb-6 sm:mb-8 text-center focus:outline-none focus:border-green-500"
                     placeholder="例如：王大明"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
@@ -656,7 +662,7 @@
                       initAudio();
                       setScreen('menu');
                     }}
-                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 text-white text-3xl md:text-4xl font-bold py-5 rounded-2xl shadow-lg transform transition active:scale-95"
+                    className="w-full bg-gradient-to-r from-green-400 to-blue-500 text-white text-2xl sm:text-3xl md:text-4xl font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl shadow-lg transform transition active:scale-95"
                   >
                     🌟 開始進入遊戲 🌟
                   </button>
@@ -664,23 +670,23 @@
               )}
 
               {screen === 'menu' && (
-                <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-2xl text-center border-8 border-blue-300">
-                  <h1 className="text-3xl md:text-4xl font-bold text-blue-700 mb-6">歡迎，{playerName}！</h1>
-                  <p className="text-xl md:text-3xl mb-10 text-gray-700 font-semibold">今天想玩哪個遊戲來活動大腦呢？</p>
-                  <div className="flex flex-col gap-6">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-2xl text-center border-4 sm:border-8 border-blue-300 max-h-full overflow-y-auto">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-700 mb-4 sm:mb-6">歡迎，{playerName}！</h1>
+                  <p className="text-lg sm:text-xl md:text-3xl mb-6 sm:mb-10 text-gray-700 font-semibold">今天想玩哪個遊戲來活動大腦呢？</p>
+                  <div className="flex flex-col gap-4 sm:gap-6">
                     <button 
                       onClick={() => startGame('game1')}
-                      className="w-full bg-gradient-to-r from-orange-400 to-red-400 text-white text-2xl md:text-4xl font-bold py-6 md:py-8 rounded-3xl shadow-xl transform transition active:scale-95"
+                      className="w-full bg-gradient-to-r from-orange-400 to-red-400 text-white text-xl sm:text-2xl md:text-4xl font-bold py-4 sm:py-6 md:py-8 rounded-2xl sm:rounded-3xl shadow-xl transform transition active:scale-95"
                     >
                       🛒 樂齡健康菜籃族
-                      <p className="text-lg md:text-xl mt-2 font-normal">接住健康食物，閃避不健康食物</p>
+                      <p className="text-sm sm:text-lg md:text-xl mt-1 sm:mt-2 font-normal">接住健康食物，閃避不健康食物</p>
                     </button>
                     <button 
                       onClick={() => startGame('game2')}
-                      className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white text-2xl md:text-4xl font-bold py-6 md:py-8 rounded-3xl shadow-xl transform transition active:scale-95"
+                      className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white text-xl sm:text-2xl md:text-4xl font-bold py-4 sm:py-6 md:py-8 rounded-2xl sm:rounded-3xl shadow-xl transform transition active:scale-95"
                     >
                       🔗 食品營養連連看
-                      <p className="text-lg md:text-xl mt-2 font-normal">將食物與對應的營養素連起來</p>
+                      <p className="text-sm sm:text-lg md:text-xl mt-1 sm:mt-2 font-normal">將食物與對應的營養素連起來</p>
                     </button>
                   </div>
                 </div>
@@ -695,13 +701,13 @@
               )}
 
               {screen === 'result' && (
-                <div className="bg-white p-6 md:p-10 rounded-3xl shadow-2xl w-full max-w-xl text-center border-8 border-yellow-400">
-                  <h1 className="text-6xl mb-6">🎉</h1>
-                  <h2 className="text-4xl md:text-5xl font-extrabold text-rose-600 mb-6">遊戲結束！</h2>
-                  <p className="text-2xl md:text-4xl text-blue-700 font-bold mb-4">{playerName} 您的總分是</p>
-                  <p className="text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">{score} 分</p>
-                  <div className="bg-yellow-100 p-6 rounded-2xl mb-8">
-                    <p className="text-2xl md:text-3xl font-bold text-gray-800">
+                <div className="bg-white p-6 sm:p-10 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-xl text-center border-4 sm:border-8 border-yellow-400 max-h-full overflow-y-auto">
+                  <h1 className="text-5xl sm:text-6xl mb-4 sm:mb-6">🎉</h1>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-rose-600 mb-4 sm:mb-6">遊戲結束！</h2>
+                  <p className="text-xl sm:text-2xl md:text-4xl text-blue-700 font-bold mb-2 sm:mb-4">{playerName} 您的總分是</p>
+                  <p className="text-5xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-6 sm:mb-8">{score} 分</p>
+                  <div className="bg-yellow-100 p-4 sm:p-6 rounded-xl sm:rounded-2xl mb-6 sm:mb-8">
+                    <p className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800">
                       {score >= 800 ? '太厲害了！知識與反應滿分！🥇' : 
                        score >= 300 ? '表現很棒喔！多多練習會更厲害！🌟' : 
                        '不要氣餒，再接再厲！活動大腦就是最棒的運動！💪'}
@@ -709,7 +715,7 @@
                   </div>
                   <button 
                     onClick={() => setScreen('menu')}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-3xl md:text-4xl font-bold py-5 rounded-2xl shadow-lg transform transition active:scale-95"
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-2xl sm:text-3xl md:text-4xl font-bold py-4 sm:py-5 rounded-xl sm:rounded-2xl shadow-lg transform transition active:scale-95"
                   >
                     🏠 回到主選單
                   </button>
